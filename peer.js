@@ -12,7 +12,7 @@ class VCPeer {
     }
     init() {
         var inst = this;
-        
+        this.audio = {};
         this.calls = { in: {}, out: {} };
 
         this.peer.on('open', function (id) {
@@ -56,17 +56,23 @@ class VCPeer {
         return true;
     }
     callUnderRadius(peer, type){
+        this.calls.out[peer] ||= [];
         if(peer == this.peer.id) return false;
         let r = this.data[this.peer.id].radius; // radius
         let d = this.distance(peer, this.peer.id); // distance
         let v = 1 - 0.25 * d; // cannot here after 4 meters // maximum limit
         
         if(v > 0 && r >= d) {
-            this.call(peer, "voice", {
-                metadata:{
-                    volume:v
-                }
-            });
+            console.log(peer, type, v);
+            if(!this.calls.out[peer][type]){
+                this.call(peer, "voice", {
+                    metadata:{
+                        volume:v
+                    }
+                });
+            } else {
+                this.audio[peer].volume = v;
+            }
         } else {
             this.disconnectCall("out", peer, "voice");
         }
@@ -115,13 +121,17 @@ class VCPeer {
 
                 inst.calls.out[call.peer] ||= {};
                 inst.calls.out[call.peer][type] = call;
-
+                
+                call.on('close', function () {
+                    inst.calls.out[call.peer][type] = null;
+                });
             })
             .catch(function (err) {
                 console.log("error: " + err);
             })
     }
     answerCall(call) {
+        var inst = this;
         var type = call.metadata.type;
         this.disconnectCall("in", call.peer, type);
         this.calls.in[call.peer] ||= {};
@@ -129,7 +139,12 @@ class VCPeer {
         call.answer();
         call.on('stream', function (stream) {
             console.log(stream);
-            handleStream(stream, call.metadata);
+            inst.audio[call.peer] = document.createElement("audio");
+            document.body.appendChild(inst.audio[call.peer]);
+            inst.audio[call.peer].srcObject = stream;
+            inst.audio[call.peer].volume = call.metadata.volume;
+            inst.audio[call.peer].play();
+            console.log(inst.audio);
         })
     }
     
@@ -143,12 +158,16 @@ class VCPeer {
     }
     disconnectOutCalls(){
         for(var peer in this.calls["out"]){
-            this.calls["out"][peer]["voice"]?.close();
+            this.disconnectCall("out", peer, "voice");
         }
     }
     disconnectCall(inout, peer, type) {
         this.calls[inout][peer] ||= {};
         this.calls[inout][peer][type]?.close();
+        if(inout == "in" && this.audio[peer]){
+            this.audio[peer].parentNode.removeChild(this.audio[peer]);
+        }
+        
     }
     sendToServer(message) {
         this.serverConnection.send(message);
@@ -158,11 +177,11 @@ class VCPeer {
         for(var key in upd){
             this.data[peer][key] = upd[key];
             if(key == "position" && peer != this.peer.id){
-                console.log(this.data[peer].position, "callUnderRadius");
+                // console.log(this.data[peer].position, "callUnderRadius");
                 this.callUnderRadius(peer, "voice");
             }
         }
-        
+        updateStats();
     }
     handleServerData(conn, message) {
         var inst = this;
@@ -174,4 +193,7 @@ class VCPeer {
         console.log("Server("+conn.peer+") says", message.func, message.args);
         functions[message.func].call(this, conn, message.args);
     }
+}
+function updateStats(){
+    document.getElementById("stats").innerHTML = JSON.stringify(peer.data, "   ");
 }
