@@ -61,6 +61,13 @@ class VCServer extends VCPeer {
         }
         return peers;
     }
+    changePeerData(peer, upd){
+        this.data[peer] ||= {};
+        for(var key in upd){
+            this.data[peer][key] = upd[key];
+        }
+        
+    }
     handlePeerData(conn, message) {
         var inst = this;
         var functions = {

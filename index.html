@@ -21,13 +21,30 @@
         function shareScreen() {
             peer.call("id2", "screen");
         }
-        function handleStream(stream) {
-            document.getElementById("screen").srcObject = stream;
+        function handleStream(stream, options) {
+            console.log(stream, options);
+            var audio = document.getElementById("screen");
+            audio.srcObject = stream;
+            if(options.volume) audio.volume = options.volume;
+            audio.play();
         }
-        
+        var x =0, y=0;
+        function turtle(dx, dy){
+            x += dx;
+            y += dy;
+            peer.changePosition(x, y);
+        }
     </script>
     <button onclick="shareScreen()">Call</button>
     <audio id="screen" autoplay controls></audio>
+
+    <br>
+    <br>
+    <button onclick = "turtle(0, -1)">Up</button>
+    <button onclick = "turtle(0, 1)">Down</button>
+    <button onclick = "turtle(-1, 0)">Left</button>
+    <button onclick = "turtle(1, 0)">Right</button>
+
 </body>
 
 </html>

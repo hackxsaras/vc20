@@ -5,6 +5,7 @@ class VCPeer {
     constructor(id, data = {position:{x:0, y:0}}, options = {}) {
         this.peer = new Peer(id, options);
         this.init();
+        data.radius ||= 4;
         this.data = {
             [id]:data
         };
@@ -46,8 +47,7 @@ class VCPeer {
         }
     }
     changePosition(x, y) {
-        this.position.x = x;
-        this.position.y = y;
+        this.data[this.peer.id].position = {x, y};
         this.sendToServer({
             func: "changeData",
             args: {position:{x, y}}
@@ -55,9 +55,30 @@ class VCPeer {
         this.connectOutCalls();
         return true;
     }
-    
+    callUnderRadius(peer, type){
+        if(peer == this.peer.id) return false;
+        let r = this.data[this.peer.id].radius; // radius
+        let d = this.distance(peer, this.peer.id); // distance
+        let v = 1 - 0.25 * d; // cannot here after 4 meters // maximum limit
+        
+        if(v > 0 && r >= d) {
+            this.call(peer, "voice", {
+                metadata:{
+                    volume:v
+                }
+            });
+        } else {
+            this.disconnectCall("out", peer, "voice");
+        }
+    }
+    connectOutCalls(){
+        for(var peer in this.data){
+            this.callUnderRadius(peer, "voice");
+        }
+    }
     call(id, type, options = {}) { // make a 
-        debug("Calling ", id, "type", type )
+        if(peer == this.peer.id) return false;
+        this.disconnectCall("out", peer, type);
         // handle browser prefixes
         var inst = this;
         // Get access to microphone
@@ -89,9 +110,7 @@ class VCPeer {
 
         navigator.mediaDevices.getUserMedia(mediaOptions)
             .then(function (stream) {
-                options.metadata = {
-                    type
-                };
+                options.metadata.type = type;
                 var call = inst.peer.call(id, stream, options);
 
                 inst.calls.out[call.peer] ||= {};
@@ -110,7 +129,7 @@ class VCPeer {
         call.answer();
         call.on('stream', function (stream) {
             console.log(stream);
-            handleStream(stream);
+            handleStream(stream, call.metadata);
         })
     }
     
@@ -139,9 +158,8 @@ class VCPeer {
         for(var key in upd){
             this.data[peer][key] = upd[key];
             if(key == "position" && peer != this.peer.id){
-                if(this.distance(peer, this.peer.id) < 4) {
-                    this.call(peer, "voice");
-                }
+                console.log(this.data[peer].position, "callUnderRadius");
+                this.callUnderRadius(peer, "voice");
             }
         }
         
