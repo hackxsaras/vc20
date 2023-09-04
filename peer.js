@@ -140,7 +140,7 @@ class VCPeer {
             this.data[peer][key] = upd[key];
             if(key == "position" && peer != this.peer.id){
                 if(this.distance(peer, this.peer.id) < 4) {
-                    this.call(peer, "screen");
+                    this.call(peer, "voice");
                 }
             }
         }
