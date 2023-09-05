@@ -146,6 +146,9 @@ class VCPeer {
             inst.audio[call.peer].play();
             console.log(inst.audio);
         })
+        call.on('close', function () {
+            this.disconnectCall("in", call.peer, "voice");
+        })
     }
     
     distance(peer1, peer2) {
@@ -164,6 +167,9 @@ class VCPeer {
     disconnectCall(inout, peer, type) {
         this.calls[inout][peer] ||= {};
         this.calls[inout][peer][type]?.close();
+        
+        this.calls[inout][peer][type] = null;
+
         if(inout == "in" && this.audio[peer]){
             this.audio[peer].parentNode.removeChild(this.audio[peer]);
         }
