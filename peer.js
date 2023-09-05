@@ -1,5 +1,17 @@
-function debug(...args){
-    console.log(...args);
+
+var deb = {
+    r(...args){
+        console.log("%c[-]", "color:#f05", ...args);
+    },
+    g(...args){
+        console.log("%c[+]", "color:#0f5", ...args);
+    },
+    b(...args){
+        console.log("%c[i]", "color:#05f", ...args);
+    },
+    w(...args){
+        console.log("%c[o]", "color:white", ...args);
+    }
 }
 class VCPeer {
     constructor(id, data = {position:{x:0, y:0}}, options = {}) {
@@ -16,7 +28,7 @@ class VCPeer {
         this.calls = { in: {}, out: {} };
 
         this.peer.on('open', function (id) {
-            console.log('My peer ID is: ' + id);
+            deb.g('Peer ID: ' + id);
             inst.connectToServer();
         });
         this.peer.on('call', function (call) {
@@ -42,7 +54,7 @@ class VCPeer {
             var conn = inst.serverConnection = inst.peer.connect("server", options);
             conn.on('open', function () {
                 conn.on('data', inst.handleServerData.bind(inst, conn));
-                console.log("Connection Established To Server.");
+                deb.g("Connection Established To Server.");
             });
         }
     }
@@ -55,22 +67,21 @@ class VCPeer {
         this.connectOutCalls();
         return true;
     }
-    callUnderRadius(peer, type){
-        this.calls.out[peer] ||= [];
+    callUnderRadius(peer, type, options = {}){
+        this.calls.out[peer] ||= {};
         if(peer == this.peer.id) return false;
         let r = this.data[this.peer.id].radius; // radius
         let d = this.distance(peer, this.peer.id); // distance
         let v = 1 - 0.25 * d; // cannot here after 4 meters // maximum limit
         
+        options.metadata ||= {};
+        options.metadata.volume = v;
+
         if(v > 0 && r >= d) {
-            console.log(peer, type, v);
             if(!this.calls.out[peer][type]){
-                this.call(peer, "voice", {
-                    metadata:{
-                        volume:v
-                    }
-                });
+                this.call(peer, "voice", options);
             } else {
+                deb.b("Changing volume for peer:"+peer, v);
                 this.audio[peer].volume = v;
             }
         } else {
@@ -82,9 +93,9 @@ class VCPeer {
             this.callUnderRadius(peer, "voice");
         }
     }
-    call(id, type, options = {}) { // make a 
+    call(peer, type, options = {}) { // make a 
         if(peer == this.peer.id) return false;
-        this.disconnectCall("out", peer, type);
+        deb.g("Calling", peer);
         // handle browser prefixes
         var inst = this;
         // Get access to microphone
@@ -117,7 +128,7 @@ class VCPeer {
         navigator.mediaDevices.getUserMedia(mediaOptions)
             .then(function (stream) {
                 options.metadata.type = type;
-                var call = inst.peer.call(id, stream, options);
+                var call = inst.peer.call(peer, stream, options);
 
                 inst.calls.out[call.peer] ||= {};
                 inst.calls.out[call.peer][type] = call;
@@ -127,7 +138,7 @@ class VCPeer {
                 });
             })
             .catch(function (err) {
-                console.log("error: " + err);
+                deb.r("error: " + err);
             })
     }
     answerCall(call) {
@@ -136,18 +147,18 @@ class VCPeer {
         this.disconnectCall("in", call.peer, type);
         this.calls.in[call.peer] ||= {};
         this.calls.in[call.peer][type] = call;
+        deb.g("Answering call from", call.peer);
         call.answer();
         call.on('stream', function (stream) {
-            console.log(stream);
+            deb.g("Stream from peer:", call.peer, "volume:"+call.metadata.volume);
             inst.audio[call.peer] = document.createElement("audio");
             document.body.appendChild(inst.audio[call.peer]);
             inst.audio[call.peer].srcObject = stream;
             inst.audio[call.peer].volume = call.metadata.volume;
             inst.audio[call.peer].play();
-            console.log(inst.audio);
         })
         call.on('close', function () {
-            this.disconnectCall("in", call.peer, "voice");
+            inst.disconnectCall("in", call.peer, "voice");
         })
     }
     
@@ -166,12 +177,18 @@ class VCPeer {
     }
     disconnectCall(inout, peer, type) {
         this.calls[inout][peer] ||= {};
-        this.calls[inout][peer][type]?.close();
+        
+        if(this.calls[inout][peer][type]){
+            deb.r("Disconnecting Call", inout, peer);
+            this.calls[inout][peer][type].close();
+            
+        }
         
         this.calls[inout][peer][type] = null;
 
         if(inout == "in" && this.audio[peer]){
             this.audio[peer].parentNode.removeChild(this.audio[peer]);
+            this.audio[peer] = null;
         }
         
     }
@@ -183,7 +200,7 @@ class VCPeer {
         for(var key in upd){
             this.data[peer][key] = upd[key];
             if(key == "position" && peer != this.peer.id){
-                // console.log(this.data[peer].position, "callUnderRadius");
+                deb.b("Position Change", peer, );
                 this.callUnderRadius(peer, "voice");
             }
         }
@@ -196,7 +213,7 @@ class VCPeer {
                 this.changePeerData(args.peer, args.data);
             }
         };
-        console.log("Server("+conn.peer+") says", message.func, message.args);
+        // deb.b("Server("+conn.peer+") says", message.func, message.args);
         functions[message.func].call(this, conn, message.args);
     }
 }

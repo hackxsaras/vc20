@@ -1,9 +1,9 @@
-class VCServer extends VCPeer {
-    constructor(...args) {
-        super(...args);
-        this.initServer();
+class VCServer {
+    constructor(id, options = {}) {
+        this.peer = new Peer(id, options);
+        this.init();
     }
-    initServer() {
+    init() {
         var inst = this;
         inst.data = {};
         inst.connection = {};
@@ -28,7 +28,6 @@ class VCServer extends VCPeer {
         })
     }
     sendToPeer(peer, message) {
-        console.log(message);
         this.connection[peer].send(message);
     }
     sendPeersDataToPeer(peer) {
@@ -48,18 +47,6 @@ class VCServer extends VCPeer {
             if (except.indexOf(key) === -1)
                 inst.sendToPeer(key, message);
         }
-    }
-    getCallablePeers(peer) {
-        var inst = this;
-        var peers = [];
-        for (var key in inst.data) {
-            if (key != peer) {
-                if (distance(peer, key) < 4) {
-                    peers.push(key);
-                }
-            }
-        }
-        return peers;
     }
     changePeerData(peer, upd){
         this.data[peer] ||= {};
@@ -85,7 +72,7 @@ class VCServer extends VCPeer {
                 console.log(...args);
             }
         }
-        console.log("Peer(" + conn.peer + ") says", message.func, message.args);
+        // deb.b("Peer(" + conn.peer + ") says", message.func, message.args);
         functions[message.func].call(this, conn, message.args);
     }
 }
