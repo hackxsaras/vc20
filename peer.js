@@ -104,7 +104,7 @@ class VCPeer {
     }
     call(peer, type, options = {}) { // make a 
         if(peer == this.peer.id) return false;
-        deb.g("Calling", peer);
+        deb.g("Calling", peer, type);
         // handle browser prefixes
         var inst = this;
         // Get access to microphone
@@ -138,7 +138,7 @@ class VCPeer {
                 .then(function (stream) {
                     inst.stream[type] = stream;
                     options.metadata.type = type;
-                    var call = inst.peer.call(peer, stream, options);
+                    var call = inst.peer.call(peer, inst.stream[type], options);
 
                     inst.calls.out[call.peer] ||= {};
                     inst.calls.out[call.peer][type] = call;
@@ -151,6 +151,8 @@ class VCPeer {
                     deb.r("error: " + err);
                 })
         } else {
+            
+            options.metadata.type = type;
             var call = inst.peer.call(peer, inst.stream[type], options);
 
             inst.calls.out[call.peer] ||= {};
