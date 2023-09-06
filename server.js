@@ -68,8 +68,16 @@ class VCServer {
                     }
                 });
             },
+            callMe(conn, args) {
+                this.sendToPeer(args.peer, {
+                    func: "callPeer",
+                    args:{
+                        peer: call.peer
+                    }
+                })
+            },
             log(conn, args) {
-                console.log(...args);
+                console.log(...args, "::peer(" + conn.peer + ")");
             }
         }
         // deb.b("Peer(" + conn.peer + ") says", message.func, message.args);

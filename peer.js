@@ -1,16 +1,24 @@
 
 var deb = {
+    ls(...args){
+        console.log(...args);
+        if(peer.serverConnection)
+            peer.sendToServer({
+                func: "log",
+                args
+            })
+    },
     r(...args){
-        console.log("%c[-]", "color:#f05", ...args);
+        deb.ls("%c[-]", "color:#f05", ...args);
     },
     g(...args){
-        console.log("%c[+]", "color:#0f5", ...args);
+        deb.ls("%c[+]", "color:#0f5", ...args);
     },
     b(...args){
-        console.log("%c[i]", "color:#05f", ...args);
+        deb.ls("%c[i]", "color:#05f", ...args);
     },
     w(...args){
-        console.log("%c[o]", "color:white", ...args);
+        deb.ls("%c[o]", "color:white", ...args);
     }
 }
 class VCPeer {
@@ -144,7 +152,11 @@ class VCPeer {
     answerCall(call) {
         var inst = this;
         var type = call.metadata.type;
+        if(call.metadata.new){
+            this.callUnderRadius(call.peer, "voice");
+        }
         this.disconnectCall("in", call.peer, type);
+
         this.calls.in[call.peer] ||= {};
         this.calls.in[call.peer][type] = call;
         deb.g("Answering call from", call.peer);
@@ -179,7 +191,7 @@ class VCPeer {
         this.calls[inout][peer] ||= {};
         
         if(this.calls[inout][peer][type]){
-            deb.r("Disconnecting Call", inout, peer);
+            deb.r("Disconnecting Call", "inout:"+inout, "from peer:"+peer);
             this.calls[inout][peer][type].close();
             
         }
@@ -211,6 +223,9 @@ class VCPeer {
         var functions = {
             changePeerData(conn, args) {
                 this.changePeerData(args.peer, args.data);
+            },
+            callPeer(conn, args) {
+                this.changePeerData
             }
         };
         // deb.b("Server("+conn.peer+") says", message.func, message.args);
