@@ -33,6 +33,7 @@ class VCPeer {
     init() {
         var inst = this;
         this.audio = {};
+        this.stream = {};
         this.calls = { in: {}, out: {} };
 
         this.peer.on('open', function (id) {
@@ -132,22 +133,33 @@ class VCPeer {
             default:
                 throw Error("Unknown Call Type:", type);
         }
+        if(!inst.stream[type]) {
+            navigator.mediaDevices.getUserMedia(mediaOptions)
+                .then(function (stream) {
+                    inst.stream[type] = stream;
+                    options.metadata.type = type;
+                    var call = inst.peer.call(peer, stream, options);
 
-        navigator.mediaDevices.getUserMedia(mediaOptions)
-            .then(function (stream) {
-                options.metadata.type = type;
-                var call = inst.peer.call(peer, stream, options);
+                    inst.calls.out[call.peer] ||= {};
+                    inst.calls.out[call.peer][type] = call;
+                    
+                    call.on('close', function () {
+                        inst.calls.out[call.peer][type] = null;
+                    });
+                })
+                .catch(function (err) {
+                    deb.r("error: " + err);
+                })
+        } else {
+            var call = inst.peer.call(peer, inst.stream[type], options);
 
-                inst.calls.out[call.peer] ||= {};
-                inst.calls.out[call.peer][type] = call;
-                
-                call.on('close', function () {
-                    inst.calls.out[call.peer][type] = null;
-                });
-            })
-            .catch(function (err) {
-                deb.r("error: " + err);
-            })
+            inst.calls.out[call.peer] ||= {};
+            inst.calls.out[call.peer][type] = call;
+            
+            call.on('close', function () {
+                inst.calls.out[call.peer][type] = null;
+            });
+        }
     }
     answerCall(call) {
         var inst = this;
