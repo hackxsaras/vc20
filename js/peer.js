@@ -84,6 +84,7 @@ class Model {
         }
 
         this.peers[id].distance = this.distance(this.peer.id, id);
+        console.log(this.peers[id].distance);
 
         if (this.peers[id].distance > 4) {
             this.disconnectCall("out", id); // disconnect this call
@@ -209,8 +210,8 @@ class View {
         this.playground.addEventListener("dblclick", function (event) {
             if (event.target.id == "playground") {
                 var x = event.pageX, y = event.pageY;
-                x = parseInt(x / 50);
-                y = parseInt(y / 50);
+                x = Math.round(x / 50);
+                y = Math.round(y / 50);
                 inst.dispatch("changePosition", x, y);
             }
         })

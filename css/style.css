@@ -2,17 +2,18 @@ body {
     margin: 0;
     width: 100vw;
     height: 100vh;
+    background-image:
+        linear-gradient(to right, grey 1px, transparent 1px),
+        linear-gradient(to bottom, grey 1px, transparent 1px);
+        background-size: 50px 50px;
+        background-position: -25px -25px;
+    z-index:1;
 }
 
 #playground {
     position: relative;
     width: 100vw;
     height: 100vh;
-    background-size: 50px 50px;
-    background-image:
-        linear-gradient(to right, grey 1px, transparent 1px),
-        linear-gradient(to bottom, grey 1px, transparent 1px);
-
     -webkit-user-select: none;  /* Chrome all / Safari all */
     -moz-user-select: none;     /* Firefox all */
     -ms-user-select: none;      /* IE 10+ */
@@ -28,4 +29,17 @@ body {
     text-align: center;
     border:1px solid black;
     box-sizing:border-box;
+    transform:translateX(-50%) translateY(-50%);
 }
+/* .vc-peer::before {
+    content: '';
+    display:block;
+    position:absolute;
+    width:450px;
+    height:450px;
+    border-radius:50%;
+    background:#0002;
+    top:-200px;
+    left:-200px;
+    z-index:-5;
+} */
