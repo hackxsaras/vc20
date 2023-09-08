@@ -39,16 +39,20 @@ class Model {
         this.inStreams = {};
         this.inCalls = {};
         this.outCalls = {};
-        this.initiatedCalls = {};
+        this.callStamp = {};
 
         this.listeners = {};
 
         this.peers = { [id]: { position: { x: 3, y: 3 } } };
 
         this.peer.on("open", (id) => {
-            deb.g("Peer id: " + id);
+            deb.g("Connected with Peer id: " + id);
             inst.connectToLeader();
         });
+        this.peer.on("disconnected", (id) => {
+            console.log("You are disconnected.");
+            inst.peer.reconnect();
+        })
         this.peer.on("call", this.answerCall.bind(this));
 
 
@@ -84,8 +88,8 @@ class Model {
         if (this.peers[id].distance > 4) {
             this.disconnectCall("out", id); // disconnect this call
         }
-        else if (this.initiatedCalls[id] && !this.outCalls[id]) {
-            this.call(id); // reconnect again
+        else if (!this.outCalls[id]) {
+            this.call(id);
         }
 
         this.dispatch("peerUpdated", id, this.peers[id]);
@@ -95,7 +99,6 @@ class Model {
             this.updatePeer(id, list[id]);
         }
         this.dispatch("listUpdated", this.peers);
-        this.initiateCalls();
     }
 
     // Providing events
@@ -121,33 +124,22 @@ class Model {
             deb.g("Connection Established To Server.");
         });
     }
-
-    initiateCalls() {
-        for (var peer in this.peers) {
-            if(this.distance(peer, this.peer.id) < 4){
-                this.call(peer, { new: true });
-            }
-        }
-        this.initiatedCalls[peer] = true;
+    callUtil(peer) {
+        this.outCalls[peer] = this.peer.call(peer, this.outStream);
     }
-    callUtil(peer, meta) {
-        this.outCalls[peer] = this.peer.call(peer, this.outStream, {
-            metadata: meta
-        });
-    }
-    call(peer, meta) {
+    call(peer) {
         var inst = this;
         if (peer == this.peer.id) {
             return;
         }
-        deb.g("Calling", peer, "with", meta);
+        deb.g("Calling", peer);
         if (!this.outStream) {
             this.dispatch("requestStream").then(function (stream) {
                 inst.outStream = stream;
-                inst.callUtil(peer, meta);
+                inst.callUtil(peer);
             });
         } else {
-            inst.callUtil(peer, meta);
+            inst.callUtil(peer);
         }
     }
     updateInStream(peer, stream) {
@@ -162,9 +154,6 @@ class Model {
         call.on('stream', function (stream) {
             inst.updateInStream(call.peer, stream);
         })
-        if (call.metadata && call.metadata.new) {
-            this.call(call.peer);
-        }
     }
     disconnectCall(type, peer) {
         if (type == "in") {
@@ -192,6 +181,10 @@ class Model {
                 inst.setList(args.list);
             },
             updatePeer(conn, args) {
+                inst.updatePeer(args.peer, args.data);
+            },
+            reconnectPeer(conn, args) {
+                inst.disconnectCall("out", args.peer);
                 inst.updatePeer(args.peer, args.data);
             }
         };
