@@ -264,7 +264,6 @@ class View {
             }
         });
         function handleDown(event) {
-            event.preventDefault();
             inst.dragging = true;
             inst.updatePlayground();
         }
@@ -277,7 +276,6 @@ class View {
             }
         }
         function handleUp(event) {
-            event.preventDefault();
             inst.dragging = false;
         }
 
