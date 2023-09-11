@@ -247,35 +247,47 @@ class View {
             config.scale += event.deltaY * -0.001;
             // Restrict scale
             config.scale = Math.min(Math.max(0.125, config.scale), 1);
+
+            config.background = `
+                linear-gradient(to right, grey 1px, transparent ${2/config.scale}px),
+                linear-gradient(to bottom, grey 1px, transparent ${2/config.scale}px)`;
+            config.borderWidth = 2/config.scale;
           
             // Apply scale transform
             // inst.playground.style.transform = `scale(${inst.scale})`;
-            if(config.scale < 0.2) {
-                
-                
-                config.background = "rgba(0,0,0,0.1)";
+            if(config.scale < 0.4) {
+                inst.setView("profile");
+                config.background = "rgba(0,0,0,0.01)";
                 
             } else {
-                config.background = `
-                    linear-gradient(to right, grey 1px, transparent ${2/config.scale}px),
-                    linear-gradient(to bottom, grey 1px, transparent ${2/config.scale}px)`;
-                config.borderWidth = 2/config.scale;
+                inst.setView("detail");
             }
         });
-        window.addEventListener("mousedown", function(event) {
+        function handleDown(event) {
+            event.preventDefault();
             inst.dragging = true;
             inst.updatePlayground();
-        })
-        window.addEventListener("mousemove", function(event) {
+        }
+        function handleMove(event) {
+            event.preventDefault();
             if(inst.dragging) {
                 inst.config.top += event.movementY;
                 inst.config.left += event.movementX;
                 inst.updatePlayground();
             }
-        })
-        window.addEventListener("mouseup", function(event) {
+        }
+        function handleUp(event) {
+            event.preventDefault();
             inst.dragging = false;
-        })
+        }
+
+        window.addEventListener("touchstart", handleDown);
+        window.addEventListener("mousedown", handleDown);
+        window.addEventListener("touchmove", handleMove);
+        window.addEventListener("mousemove", handleMove);
+        window.addEventListener("mouseup", handleUp);
+        window.addEventListener("touchend", handleUp);
+        window.addEventListener("touchcancel", handleUp);
     }
     updatePlayground() {
         var {shape, top, left, scale, blockSize, background, borderWidth} = this.config;
@@ -313,30 +325,60 @@ class View {
             this.audios[peer].volume = v;
         }
     }
+    setView(type) {
+        if(type == "profile") {
+            this.playground.classList.add("view-profile");
+        } else {
+            this.playground.classList.remove("view-profile");
+        }
+    }
+    addPeer(peer, data) {
+        var {blockSize} = this.config;
+
+        var el = document.createElement("div");
+        el.classList.add("vc-peer");
+        el.style.width = blockSize + "px";
+        el.style.height = blockSize + "px";
+
+        
+
+        this.playground.appendChild(el);
+        this.peers[peer] = el;
+
+
+        var d = document.createElement("div");
+        d.classList.add("vc-details");
+        el.appendChild(d);
+
+        var p = document.createElement("div");
+        p.classList.add("vc-profile");
+        var r = Math.random() * 255;
+        var g = Math.random() * 255;
+        var b = Math.random() * 255;
+        
+        var tc = (r + g + b >= 382.5) ? "#000" : "#fff";
+        p.style.background = `rgb(${r}, ${g}, ${b})`;
+        p.style.color = tc;
+
+        p.style.width = blockSize + "px";
+        p.style.height = blockSize + "px";
+        p.style.zIndex = 5;
+        p.style.lineHeight = blockSize + "px";
+        p.style.fontSize = (blockSize/2) + "px";
+        p.innerHTML = peer[0].toUpperCase();
+
+        el.appendChild(p);
+        
+    }
     displayPeer(peer, data) {
         var {blockSize} = this.config;
         if (!this.peers[peer]) {
-            var el = document.createElement("div");
-            el.innerHTML = peer;
-            el.classList.add("vc-peer");
-            el.style.width = blockSize + "px";
-            el.style.height = blockSize + "px";
-
-            this.playground.appendChild(el);
-            this.peers[peer] = el;
-
-
-            var r = Math.random() * 255;
-            var g = Math.random() * 255;
-            var b = Math.random() * 255;
-            
-            var tc = (r + g + b >= 382.5) ? "#000" : "#fff";
-            this.peers[peer].style.background = `rgb(${r}, ${g}, ${b})`;
-            this.peers[peer].style.color = tc;
+            this.addPeer(peer, data);
         }
         this.peers[peer].style.top = (data.position.y * blockSize) + "px";
         this.peers[peer].style.left = (data.position.x * blockSize) + "px";
-        this.peers[peer].innerHTML = peer;
+        var details = this.peers[peer].querySelector(".vc-details");
+        details.innerHTML = peer + "<br>" + JSON.stringify(data, null, 3).replaceAll(" ", "&nbsp;").replaceAll("\n", "<br>");
 
 
         this.distances[peer] = data.distance;
