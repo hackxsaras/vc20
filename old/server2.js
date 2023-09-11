@@ -20,16 +20,34 @@ class VCServer {
             inst.connection[conn.peer] = conn;
             conn.on('open', function () {
                 console.log("Connection established to " + conn.peer + " with data ", conn.metadata);
+
+                if (inst.data[conn.peer]) {
+                    inst.updatePeers({
+                        func: "reconnectPeer",
+                        args: {
+                            peer: conn.peer,
+                            data: conn.metadata
+                        }
+                    })
+                } else {
+                    inst.updatePeers({
+                        func: "changePeerData",
+                        args: {
+                            peer: conn.peer,
+                            data: conn.metadata
+                        }
+                    });
+                }
+                inst.data[conn.peer] = {
+                    ...conn.metadata
+                };
                 conn.on('data', inst.handlePeerData.bind(inst, conn));
                 inst.sendPeersDataToPeer(conn.peer);
-                inst.updatePeers({
-                    func: "updatePeer",
-                    args: {
-                        peer: conn.peer,
-                        data: conn.metadata
-                    }
-                });
             });
+        })
+        inst.peer.on("disconnected", (id) => {
+            console.log("You are disconnected.");
+            inst.peer.reconnect();
         })
     }
     sendToPeer(peer, message) {
@@ -50,12 +68,12 @@ class VCServer {
                 inst.sendToPeer(key, message);
         }
     }
-    changePeerData(peer, upd){
+    changePeerData(peer, upd) {
         this.data[peer] ||= {};
-        for(var key in upd){
+        for (var key in upd) {
             this.data[peer][key] = upd[key];
         }
-        
+
     }
     handlePeerData(conn, message) {
         var inst = this;

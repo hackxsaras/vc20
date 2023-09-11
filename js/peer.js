@@ -84,7 +84,7 @@ class Model {
         }
 
         this.peers[id].distance = this.distance(this.peer.id, id);
-        console.log(this.peers[id].distance);
+        // console.log(this.peers[id].distance);
 
         if (this.peers[id].distance > 4) {
             this.disconnectCall("out", id); // disconnect this call
@@ -203,18 +203,91 @@ class View {
 
         this.listeners = {};
 
-        this._initLocalListeners();
+        this.config = {
+            shape:{x:10, y:10},
+            blockSize:300,
+            scale:1,
+            borderWidth:1
+        }
+
+        this._init();
+
+
+
     }
-    _initLocalListeners() {
+    _init() {
+        var {shape, blockSize} = this.config;
+        this.config.top = window.innerHeight/2 - shape.y * blockSize/2;
+        this.config.left = window.innerWidth/2 - shape.x * blockSize/2;
+        setInterval(this.updatePlayground.bind(this), 100);
+
         var inst = this;
         this.playground.addEventListener("dblclick", function (event) {
             if (event.target.id == "playground") {
-                var x = event.pageX, y = event.pageY;
-                x = Math.round(x / 50);
-                y = Math.round(y / 50);
+                console.log(event);
+                var r = inst.playground.getBoundingClientRect();
+                console.log(r.width, inst.playground.style.width, inst.config.scale);
+                var x = event.clientX - r.left;
+                var y = event.clientY - r.top;
+
+                // we have zoomed out or scaled out 
+                // so, we have to convert it back to scale 1
+                // 1 : xnew :: scale : x
+                // xnew = x/scale
+                x = Math.round(x / (inst.config.blockSize * inst.config.scale));
+                y = Math.round(y / (inst.config.blockSize * inst.config.scale));
+                console.log("New x, y:", x, y);
                 inst.dispatch("changePosition", x, y);
             }
         })
+        window.addEventListener("wheel", function(event) {
+            event.preventDefault();
+            var config = inst.config;
+            console.log(event.deltaY, config.scale);
+            config.scale += event.deltaY * -0.001;
+            // Restrict scale
+            config.scale = Math.min(Math.max(0.125, config.scale), 1);
+          
+            // Apply scale transform
+            // inst.playground.style.transform = `scale(${inst.scale})`;
+            if(config.scale < 0.2) {
+                
+                
+                config.background = "rgba(0,0,0,0.1)";
+                
+            } else {
+                config.background = `
+                    linear-gradient(to right, grey 1px, transparent ${2/config.scale}px),
+                    linear-gradient(to bottom, grey 1px, transparent ${2/config.scale}px)`;
+                config.borderWidth = 2/config.scale;
+            }
+        });
+        window.addEventListener("mousedown", function(event) {
+            inst.dragging = true;
+            inst.updatePlayground();
+        })
+        window.addEventListener("mousemove", function(event) {
+            if(inst.dragging) {
+                inst.config.top += event.movementY;
+                inst.config.left += event.movementX;
+                inst.updatePlayground();
+            }
+        })
+        window.addEventListener("mouseup", function(event) {
+            inst.dragging = false;
+        })
+    }
+    updatePlayground() {
+        var {shape, top, left, scale, blockSize, background, borderWidth} = this.config;
+        this.playground.style.width = shape.x * blockSize + "px";
+        this.playground.style.height = shape.y * blockSize + "px";
+        this.playground.style.top = top+ "px";
+        this.playground.style.left = left + "px";
+        this.playground.style.transform = `scale(${scale})`;
+        this.playground.style.background = background;
+        this.playground.style.backgroundSize = `${blockSize}px ${blockSize}px`;
+        this.playground.style.backgroundPosition = `${-blockSize/2}px ${-blockSize/2}px`;
+        this.playground.style.borderWidth = `${borderWidth}px`
     }
     playAudio(peer, stream) {
         if (!this.audios[peer]) {
@@ -241,24 +314,28 @@ class View {
         }
     }
     displayPeer(peer, data) {
+        var {blockSize} = this.config;
         if (!this.peers[peer]) {
             var el = document.createElement("div");
             el.innerHTML = peer;
             el.classList.add("vc-peer");
+            el.style.width = blockSize + "px";
+            el.style.height = blockSize + "px";
 
             this.playground.appendChild(el);
             this.peers[peer] = el;
 
+
             var r = Math.random() * 255;
             var g = Math.random() * 255;
             var b = Math.random() * 255;
-            console.log(r, g, b);
+            
             var tc = (r + g + b >= 382.5) ? "#000" : "#fff";
             this.peers[peer].style.background = `rgb(${r}, ${g}, ${b})`;
             this.peers[peer].style.color = tc;
         }
-        this.peers[peer].style.top = (data.position.y * 50) + "px";
-        this.peers[peer].style.left = (data.position.x * 50) + "px";
+        this.peers[peer].style.top = (data.position.y * blockSize) + "px";
+        this.peers[peer].style.left = (data.position.x * blockSize) + "px";
         this.peers[peer].innerHTML = peer;
 
 

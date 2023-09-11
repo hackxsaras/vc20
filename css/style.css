@@ -2,22 +2,21 @@ body {
     margin: 0;
     width: 100vw;
     height: 100vh;
-    background-image:
-        linear-gradient(to right, grey 1px, transparent 1px),
-        linear-gradient(to bottom, grey 1px, transparent 1px);
-        background-size: 50px 50px;
-        background-position: -25px -25px;
     z-index:1;
+    overflow:hidden;
 }
 
 #playground {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    box-sizing:border-box;
+    border:1px solid #000;
     -webkit-user-select: none;  /* Chrome all / Safari all */
     -moz-user-select: none;     /* Firefox all */
     -ms-user-select: none;      /* IE 10+ */
     user-select: none;          /* Likely future */ 
+    background-image:
+        linear-gradient(to right, grey 1px, transparent 1px),
+        linear-gradient(to bottom, grey 1px, transparent 1px);
 }
 
 .vc-peer {
