@@ -1,11 +1,11 @@
 class VCServer {
     constructor(id, options = {}) {
-        this.peer = new Peer(id);
-        //     ,  {
-        //     host: "localhost",
-        //     port: 9000,
-        //     path: "/myapp"
-        // });
+        this.peer = new Peer(id
+            , {
+            host: "vc-server.adaptable.app",
+            port: 443,
+            path: "/"
+        });
         this.init();
     }
     init() {

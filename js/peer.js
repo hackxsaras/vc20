@@ -28,12 +28,12 @@ var deb = {
 class Model {
     constructor(id) {
         var inst = this;
-        this.peer = new Peer(id);
-        //     , {
-        //     host: "localhost",
-        //     port: 9000,
-        //     path: "/myapp"
-        // });
+        this.peer = new Peer(id
+            , {
+                host: "vc-server.adaptable.app",
+                port: 443,
+                path: "/"
+            });
 
         this.outStream = null;
         this.inStreams = {};
@@ -204,21 +204,21 @@ class View {
         this.listeners = {};
 
         this.config = {
-            shape:{x:10, y:10},
-            blockSize:300,
-            scale:1,
-            borderWidth:1
+            shape: { x: 10, y: 10 },
+            blockSize: 300,
+            scale: 1,
+            borderWidth: 1
         }
 
         this._init();
-
+        this.ongoingTouches = [];
 
 
     }
     _init() {
-        var {shape, blockSize} = this.config;
-        this.config.top = window.innerHeight/2 - shape.y * blockSize/2;
-        this.config.left = window.innerWidth/2 - shape.x * blockSize/2;
+        var { shape, blockSize } = this.config;
+        this.config.top = window.innerHeight / 2 - shape.y * blockSize / 2;
+        this.config.left = window.innerWidth / 2 - shape.x * blockSize / 2;
         setInterval(this.updatePlayground.bind(this), 100);
 
         var inst = this;
@@ -240,7 +240,7 @@ class View {
                 inst.dispatch("changePosition", x, y);
             }
         })
-        window.addEventListener("wheel", function(event) {
+        window.addEventListener("wheel", function (event) {
             event.preventDefault();
             var config = inst.config;
             console.log(event.deltaY, config.scale);
@@ -249,16 +249,18 @@ class View {
             config.scale = Math.min(Math.max(0.125, config.scale), 1);
 
             config.background = `
-                linear-gradient(to right, grey 1px, transparent ${2/config.scale}px),
-                linear-gradient(to bottom, grey 1px, transparent ${2/config.scale}px)`;
-            config.borderWidth = 2/config.scale;
-          
+                linear-gradient(to right, grey 1px, transparent ${2 / config.scale}px),
+                linear-gradient(to bottom, grey 1px, transparent ${2 / config.scale}px)`;
+            config.borderWidth = 2 / config.scale;
+
+            let pageZoom = (( window.outerWidth - 10 ) / window.innerWidth) * 100;
             // Apply scale transform
             // inst.playground.style.transform = `scale(${inst.scale})`;
-            if(config.scale < 0.4) {
+            console.log("PageZoom = ", pageZoom);
+            if (config.scale * pageZoom < 0.3) {
                 inst.setView("profile");
                 config.background = "rgba(0,0,0,0.01)";
-                
+
             } else {
                 inst.setView("detail");
             }
@@ -269,7 +271,7 @@ class View {
         }
         function handleMove(event) {
             event.preventDefault();
-            if(inst.dragging) {
+            if (inst.dragging) {
                 inst.config.top += event.movementY;
                 inst.config.left += event.movementX;
                 inst.updatePlayground();
@@ -279,24 +281,25 @@ class View {
             inst.dragging = false;
         }
 
-        window.addEventListener("touchstart", handleDown);
         window.addEventListener("mousedown", handleDown);
-        window.addEventListener("touchmove", handleMove);
         window.addEventListener("mousemove", handleMove);
         window.addEventListener("mouseup", handleUp);
-        window.addEventListener("touchend", handleUp);
-        window.addEventListener("touchcancel", handleUp);
     }
     updatePlayground() {
-        var {shape, top, left, scale, blockSize, background, borderWidth} = this.config;
+        if(window.matchMedia("(any-hover: none)").matches) {
+            this.config.top = 0;
+            this.config.left = 0;
+            this.scale = 1;
+        }
+        var { shape, top, left, scale, blockSize, background, borderWidth } = this.config;
         this.playground.style.width = shape.x * blockSize + "px";
         this.playground.style.height = shape.y * blockSize + "px";
-        this.playground.style.top = top+ "px";
+        this.playground.style.top = top + "px";
         this.playground.style.left = left + "px";
         this.playground.style.transform = `scale(${scale})`;
         this.playground.style.background = background;
         this.playground.style.backgroundSize = `${blockSize}px ${blockSize}px`;
-        this.playground.style.backgroundPosition = `${-blockSize/2}px ${-blockSize/2}px`;
+        this.playground.style.backgroundPosition = `${-blockSize / 2}px ${-blockSize / 2}px`;
         this.playground.style.borderWidth = `${borderWidth}px`
     }
     playAudio(peer, stream) {
@@ -324,21 +327,21 @@ class View {
         }
     }
     setView(type) {
-        if(type == "profile") {
+        if (type == "profile") {
             this.playground.classList.add("view-profile");
         } else {
             this.playground.classList.remove("view-profile");
         }
     }
     addPeer(peer, data) {
-        var {blockSize} = this.config;
+        var { blockSize } = this.config;
 
         var el = document.createElement("div");
         el.classList.add("vc-peer");
         el.style.width = blockSize + "px";
         el.style.height = blockSize + "px";
 
-        
+
 
         this.playground.appendChild(el);
         this.peers[peer] = el;
@@ -353,7 +356,7 @@ class View {
         var r = Math.random() * 255;
         var g = Math.random() * 255;
         var b = Math.random() * 255;
-        
+
         var tc = (r + g + b >= 382.5) ? "#000" : "#fff";
         p.style.background = `rgb(${r}, ${g}, ${b})`;
         p.style.color = tc;
@@ -362,14 +365,14 @@ class View {
         p.style.height = blockSize + "px";
         p.style.zIndex = 5;
         p.style.lineHeight = blockSize + "px";
-        p.style.fontSize = (blockSize/2) + "px";
+        p.style.fontSize = (blockSize / 2) + "px";
         p.innerHTML = peer[0].toUpperCase();
 
         el.appendChild(p);
-        
+
     }
     displayPeer(peer, data) {
-        var {blockSize} = this.config;
+        var { blockSize } = this.config;
         if (!this.peers[peer]) {
             this.addPeer(peer, data);
         }

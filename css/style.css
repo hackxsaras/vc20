@@ -1,13 +1,18 @@
 body {
+    position:relative;
+    margin:0;
+    overflow:hidden;
+    touch-action:pan-x pan-y pinch-zoom;
+}
+.fc {
     margin: 0;
     width: 100vw;
     height: 100vh;
-    z-index:1;
     overflow:hidden;
 }
 
 #playground {
-    position: relative;
+    position:absolute;
     box-sizing:border-box;
     border:1px solid #000;
     -webkit-user-select: none;  /* Chrome all / Safari all */
@@ -38,15 +43,15 @@ body {
 #playground.view-profile .vc-profile {
     display:block;
 }
-/* .vc-peer::before {
-    content: '';
-    display:block;
-    position:absolute;
-    width:450px;
-    height:450px;
-    border-radius:50%;
-    background:#0002;
-    top:-200px;
-    left:-200px;
-    z-index:-5;
-} */
+
+@media (hover: none) {
+    /*touch device do not do anything*/
+    .fc{
+        width:auto;
+        height:auto;
+    }
+    body{
+        overflow:auto;
+    }
+    
+  }
