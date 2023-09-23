@@ -358,8 +358,9 @@ class View {
         var b = Math.random() * 255;
 
         var tc = (r + g + b >= 382.5) ? "#000" : "#fff";
-        p.style.background = `rgb(${r}, ${g}, ${b})`;
-        p.style.color = tc;
+        el.style.background = `rgb(${r}, ${g}, ${b})`;
+        el.style.color = tc;
+        el.style.lineHeight = blockSize + "px";
 
         p.style.width = blockSize + "px";
         p.style.height = blockSize + "px";
@@ -379,7 +380,7 @@ class View {
         this.peers[peer].style.top = (data.position.y * blockSize) + "px";
         this.peers[peer].style.left = (data.position.x * blockSize) + "px";
         var details = this.peers[peer].querySelector(".vc-details");
-        details.innerHTML = peer + "<br>" + JSON.stringify(data, null, 3).replaceAll(" ", "&nbsp;").replaceAll("\n", "<br>");
+        // details.innerHTML = peer[0].toUpperCase();
 
 
         this.distances[peer] = data.distance;
