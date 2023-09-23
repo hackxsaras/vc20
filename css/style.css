@@ -9,19 +9,20 @@ body {
     width: 100vw;
     height: 100vh;
     overflow:hidden;
+    background: #001;
 }
 
 #playground {
     position:absolute;
     box-sizing:border-box;
-    border:1px solid #000;
+    border:1px solid #fff;
     -webkit-user-select: none;  /* Chrome all / Safari all */
     -moz-user-select: none;     /* Firefox all */
     -ms-user-select: none;      /* IE 10+ */
     user-select: none;          /* Likely future */ 
     background-image:
-        linear-gradient(to right, grey 1px, transparent 1px),
-        linear-gradient(to bottom, grey 1px, transparent 1px);
+        linear-gradient(to right, grey 2px, transparent 1px),
+        linear-gradient(to bottom, grey 2px, transparent 1px);
 }
 
 .vc-peer {
@@ -30,10 +31,13 @@ body {
     box-sizing:border-box;
     transform:translateX(-50%) translateY(-50%);
     overflow:hidden;
+    background:#00a5;
+    color:#fff;
+    /* text-align:center; */
 }
 .vc-profile {
-    z-index: 5;
-    display:none;
+    /* z-index: 5;
+    display:none; */
     position:absolute;
     top:0;
     left:0;
